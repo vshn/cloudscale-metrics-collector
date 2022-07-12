@@ -11,3 +11,6 @@ cloudscale-metrics-collector
 .cache/
 .public/
 node_modules/
+
+# Configuration
+env

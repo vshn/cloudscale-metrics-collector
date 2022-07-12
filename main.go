@@ -2,13 +2,14 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	//	"os/signal"
 	//	"sync/atomic"
 	//	"syscall"
+	"context"
+	"github.com/cloudscale-ch/cloudscale-go-sdk/v2"
 	"time"
-	//	"github.com/go-logr/logr"
-	//	"github.com/urfave/cli/v2"
 )
 
 var (
@@ -20,16 +21,33 @@ var (
 	appName     = "cloudscale-metrics-collector"
 	appLongName = "cloudscale-metrics-collector"
 
-	// TODO: Adjust or clear env var prefix
-	// envPrefix is the global prefix to use for the keys in environment variables
-	envPrefix = "CLOUDSCALE_METRICS_COLLECTOR"
+	// constants
+	tokenEnvVariable = "CLOUDSCALE_API_TOKEN"
 )
 
-func env(suffix string) string {
-	return os.Getenv(envPrefix + "_" + suffix)
-}
-
 func main() {
-	fmt.Printf("hello world\n")
-	fmt.Printf(env("PATH") + "\n")
+	ctx := context.Background()
+	cloudscaleApiToken := os.Getenv(tokenEnvVariable)
+	if cloudscaleApiToken == "" {
+		fmt.Fprintf(os.Stderr, "Environment variable %s must be set", tokenEnvVariable)
+		os.Exit(1)
+	}
+
+	cloudscaleClient := cloudscale.NewClient(http.DefaultClient)
+	cloudscaleClient.AuthToken = cloudscaleApiToken
+
+	now := time.Now()
+	endTime := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	startTime := endTime.AddDate(0, -6, 0)
+	fmt.Printf("start: %s, end: %s\n", startTime, endTime)
+	bucketMetricsRequest := cloudscale.BucketMetricsRequest{Start: startTime, End: endTime}
+	var bucketMetrics *cloudscale.BucketMetrics
+	var err error
+	bucketMetrics, err = cloudscaleClient.Metrics.GetBucketMetrics(ctx, &bucketMetricsRequest)
+	if err != nil {
+		fmt.Printf("ERROR: " + err.Error() + "\n")
+		os.Exit(1)
+	}
+
+	fmt.Printf("result: %+v\n", bucketMetrics.Data)
 }
