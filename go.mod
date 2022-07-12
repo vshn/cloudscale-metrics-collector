@@ -1,5 +1,5 @@
 // TODO: Replace module name
-module github.com/vshn/go-bootstrap
+module github.com/vshn/cloudscale-metrics-collector
 
 go 1.18
 

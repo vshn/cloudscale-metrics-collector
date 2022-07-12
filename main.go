@@ -19,13 +19,12 @@ var (
 	commit  = "-dirty-"
 	date    = time.Now().Format("2006-01-02")
 
-	// TODO: Adjust app name
-	appName     = "go-bootstrap"
-	appLongName = "a generic bootstrapping project"
+	appName     = "cloudscale-metrics-collector"
+	appLongName = "cloudscale-metrics-collector"
 
 	// TODO: Adjust or clear env var prefix
 	// envPrefix is the global prefix to use for the keys in environment variables
-	envPrefix = "BOOTSTRAP"
+	envPrefix = "CLOUDSCALE_METRICS_COLLECTOR"
 )
 
 func main() {

@@ -2,7 +2,7 @@
 
 PROJECT_ROOT_DIR = .
 # TODO: Adjust project meta
-PROJECT_NAME ?= go-bootstrap
+PROJECT_NAME ?= cloudscale-metrics-collector
 PROJECT_OWNER ?= vshn
 
 ## BUILD:go

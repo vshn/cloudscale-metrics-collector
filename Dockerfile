@@ -8,7 +8,7 @@ RUN \
     tzdata
 
 # TODO: Adjust binary file name
-ENTRYPOINT ["go-bootstrap"]
-COPY go-bootstrap /usr/bin/
+ENTRYPOINT ["cloudscale-metrics-collector"]
+COPY cloudscale-metrics-collector /usr/bin/
 
 USER 65536:0

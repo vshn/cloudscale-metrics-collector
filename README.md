@@ -1,15 +1,15 @@
-# go-bootstrap
+# cloudscale-metrics-collector
 
-[![Build](https://img.shields.io/github/workflow/status/vshn/go-bootstrap/Test)][build]
-![Go version](https://img.shields.io/github/go-mod/go-version/vshn/go-bootstrap)
-[![Version](https://img.shields.io/github/v/release/vshn/go-bootstrap)][releases]
-[![Maintainability](https://img.shields.io/codeclimate/maintainability/vshn/go-bootstrap)][codeclimate]
-[![Coverage](https://img.shields.io/codeclimate/coverage/vshn/go-bootstrap)][codeclimate]
-[![GitHub downloads](https://img.shields.io/github/downloads/vshn/go-bootstrap/total)][releases]
+[![Build](https://img.shields.io/github/workflow/status/vshn/cloudscale-metrics-collector/Test)][build]
+![Go version](https://img.shields.io/github/go-mod/go-version/vshn/cloudscale-metrics-collector)
+[![Version](https://img.shields.io/github/v/release/vshn/cloudscale-metrics-collector)][releases]
+[![Maintainability](https://img.shields.io/codeclimate/maintainability/vshn/cloudscale-metrics-collector)][codeclimate]
+[![Coverage](https://img.shields.io/codeclimate/coverage/vshn/cloudscale-metrics-collector)][codeclimate]
+[![GitHub downloads](https://img.shields.io/github/downloads/vshn/cloudscale-metrics-collector/total)][releases]
 
-[build]: https://github.com/vshn/go-bootstrap/actions?query=workflow%3ATest
-[releases]: https://github.com/vshn/go-bootstrap/releases
-[codeclimate]: https://codeclimate.com/github/vshn/go-bootstrap
+[build]: https://github.com/vshn/cloudscale-metrics-collector/actions?query=workflow%3ATest
+[releases]: https://github.com/vshn/cloudscale-metrics-collector/releases
+[codeclimate]: https://codeclimate.com/github/vshn/cloudscale-metrics-collector
 
 Template repository for common Go setups
 
