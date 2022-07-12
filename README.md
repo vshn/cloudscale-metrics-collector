@@ -36,12 +36,6 @@ Template repository for common Go setups
   - Automated with GitHub workflows to build in `master` branch and (pre-)releases.
   - Available `make` targets are prefixed with `docs-`
 
-* Local Kubernetes environment
-  - Setup Kubernetes-In-Docker (kind)
-  - Prepares a kubeconfig file in `.kind/`
-  - Optionally install NGINX as ingress controller
-  - Available `make` targets are prefixed with `kind-`
-
 * CLI and logging framework
   - To help get you started with CLI subcommands, flags and environment variables
   - If you don't need subcommands, remove `example_command.go` and adjust `cli.App` settings in `main.go`

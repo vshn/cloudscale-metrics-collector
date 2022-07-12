@@ -11,6 +11,3 @@ go-bootstrap
 .cache/
 .public/
 node_modules/
-
-# kind
-.kind/
