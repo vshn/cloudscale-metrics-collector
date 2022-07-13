@@ -1,14 +1,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"github.com/cloudscale-ch/cloudscale-go-sdk/v2"
 	"net/http"
 	"os"
-	//	"os/signal"
-	//	"sync/atomic"
-	//	"syscall"
-	"context"
-	"github.com/cloudscale-ch/cloudscale-go-sdk/v2"
 	"time"
 )
 
@@ -17,9 +14,7 @@ var (
 	version = "unknown"
 	commit  = "-dirty-"
 	date    = time.Now().Format("2006-01-02")
-
-	appName     = "cloudscale-metrics-collector"
-	appLongName = "cloudscale-metrics-collector"
+	appName = "cloudscale-metrics-collector"
 
 	// constants
 	tokenEnvVariable = "CLOUDSCALE_API_TOKEN"
@@ -29,25 +24,32 @@ func main() {
 	ctx := context.Background()
 	cloudscaleApiToken := os.Getenv(tokenEnvVariable)
 	if cloudscaleApiToken == "" {
-		fmt.Fprintf(os.Stderr, "Environment variable %s must be set", tokenEnvVariable)
+		fmt.Fprintf(os.Stderr, "ERROR: Environment variable %s must be set", tokenEnvVariable)
 		os.Exit(1)
 	}
 
 	cloudscaleClient := cloudscale.NewClient(http.DefaultClient)
 	cloudscaleClient.AuthToken = cloudscaleApiToken
 
-	now := time.Now()
-	endTime := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-	startTime := endTime.AddDate(0, -6, 0)
-	fmt.Printf("start: %s, end: %s\n", startTime, endTime)
-	bucketMetricsRequest := cloudscale.BucketMetricsRequest{Start: startTime, End: endTime}
-	var bucketMetrics *cloudscale.BucketMetrics
+	// The cloudscale API works in Europe/Zurich, so we have to use the same, regardless of where this code runs
 	var err error
-	bucketMetrics, err = cloudscaleClient.Metrics.GetBucketMetrics(ctx, &bucketMetricsRequest)
+	var location *time.Location
+	location, err = time.LoadLocation("Europe/Zurich")
 	if err != nil {
-		fmt.Printf("ERROR: " + err.Error() + "\n")
+		fmt.Fprintf(os.Stderr, "ERROR: "+err.Error()+"\n")
 		os.Exit(1)
 	}
 
-	fmt.Printf("result: %+v\n", bucketMetrics.Data)
+	// Fetch statistics of yesterday (as per Europe/Zurich). The metrics will cover the entire day.
+	now := time.Now().In(location)
+	date := time.Date(now.Year(), now.Month(), now.Day()-1, 0, 0, 0, 0, now.Location())
+	bucketMetricsRequest := cloudscale.BucketMetricsRequest{Start: date, End: date}
+	var bucketMetrics *cloudscale.BucketMetrics
+	bucketMetrics, err = cloudscaleClient.Metrics.GetBucketMetrics(ctx, &bucketMetricsRequest)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "ERROR: "+err.Error()+"\n")
+		os.Exit(1)
+	}
+
+	fmt.Printf("%+v\n", bucketMetrics.Data)
 }
