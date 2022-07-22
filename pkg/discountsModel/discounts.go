@@ -1,0 +1,78 @@
+package discountsModel
+
+import (
+	"context"
+	"github.com/appuio/appuio-cloud-reporting/pkg/db"
+	"github.com/jmoiron/sqlx"
+	"github.com/vshn/cloudscale-metrics-collector/pkg/tokenMatcher"
+	"time"
+)
+
+func GetBySource(ctx context.Context, tx *sqlx.Tx, source string) (*db.Discount, error) {
+	var discounts []db.Discount
+	err := sqlx.SelectContext(ctx, tx, &discounts, `SELECT discounts.* FROM discounts WHERE source = $1`, source)
+	if err != nil {
+		return nil, err
+	}
+	if len(discounts) == 0 {
+		return nil, nil
+	}
+	return &discounts[0], nil
+}
+
+func getBySourceQueryAndTime(ctx context.Context, tx *sqlx.Tx, sourceQuery string, timestamp time.Time) ([]db.Discount, error) {
+	var discounts []db.Discount
+	err := sqlx.SelectContext(ctx, tx, &discounts,
+		`SELECT discounts.* FROM discounts 
+                  WHERE (source = $1 OR source LIKE $2)
+                  AND during @> $3::timestamptz`,
+		sourceQuery, sourceQuery+":%", timestamp)
+	if err != nil {
+		return nil, err
+	}
+	return discounts, nil
+}
+
+func GetBestMatch(ctx context.Context, tx *sqlx.Tx, source string, timestamp time.Time) (*db.Discount, error) {
+	tokenizedSource := tokenMatcher.NewTokenizedSource(source)
+	candidateDiscounts, err := getBySourceQueryAndTime(ctx, tx, tokenizedSource.Tokens[0], timestamp)
+	if err != nil {
+		return nil, err
+	}
+
+	candidateSourcePatterns := make([]*tokenMatcher.TokenizedSource, len(candidateDiscounts))
+	for i, candidateDiscount := range candidateDiscounts {
+		candidateSourcePatterns[i] = tokenMatcher.NewTokenizedSource(candidateDiscount.Source)
+	}
+
+	match := tokenMatcher.FindBestMatch(tokenizedSource, candidateSourcePatterns)
+
+	for _, candidateDiscount := range candidateDiscounts {
+		if candidateDiscount.Source == match.String() {
+			return &candidateDiscount, nil
+		}
+	}
+
+	return nil, nil
+}
+
+func Ensure(ctx context.Context, tx *sqlx.Tx, ensureDiscount *db.Discount) (*db.Discount, error) {
+	discount, err := GetBySource(ctx, tx, ensureDiscount.Source)
+	if err != nil {
+		return nil, err
+	}
+	if discount == nil {
+		discount, err = Create(tx, ensureDiscount)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return discount, nil
+}
+
+func Create(p db.NamedPreparer, in *db.Discount) (*db.Discount, error) {
+	var discount db.Discount
+	err := db.GetNamed(p, &discount,
+		"INSERT INTO discounts (source,discount,during) VALUES (:source,:discount,:during) RETURNING *", in)
+	return &discount, err
+}
