@@ -36,29 +36,29 @@ var (
 	sourceQueryTrafficOut = "s3-traffic-out"
 	sourceQueryRequests   = "s3-requests"
 
-	// We use "cloudscale" as the zone. We'll probably support other cloud providers at some point.
-	sourceZone = "cloudscale"
+	// we must use the correct zones, otherwise the appuio-odoo-adapter will not work correctly
+	sourceZones = []string{"c-appuio-cloudscale-lpg-2"}
 
 	// source "
 
 	// products
 	productsData = []*db.Product{
 		{
-			Source: sourceQueryStorage + ":" + sourceZone,
+			Source: sourceQueryStorage + ":" + sourceZones[0],
 			Target: sql.NullString{String: "1401", Valid: true},
 			Amount: 0.003,
 			Unit:   "GB/day", // SI GB according to cloudscale
 			During: db.InfiniteRange(),
 		},
 		{
-			Source: sourceQueryTrafficOut + ":" + sourceZone,
+			Source: sourceQueryTrafficOut + ":" + sourceZones[0],
 			Target: sql.NullString{String: "1403", Valid: true},
 			Amount: 0.02,
 			Unit:   "GB", // SI GB according to cloudscale
 			During: db.InfiniteRange(),
 		},
 		{
-			Source: sourceQueryRequests + ":" + sourceZone,
+			Source: sourceQueryRequests + ":" + sourceZones[0],
 			Target: sql.NullString{String: "1405", Valid: true},
 			Amount: 0.005,
 			Unit:   "1k Requests",
@@ -194,15 +194,20 @@ func main() {
 			fmt.Fprintf(os.Stderr, "WARNING: Cannot sync bucket %s, no namespace information found on objectsUser\n", bucketMetricsData.Subject.BucketName)
 			continue
 		}
+		zone := objectsUser.Tags["zone"]
+		if zone == "" {
+			fmt.Fprintf(os.Stderr, "WARNING: Cannot sync bucket %s, no zone information found on objectsUser\n", bucketMetricsData.Subject.BucketName)
+			continue
+		}
 
-		sourceStorage := sourceQueryStorage + ":" + sourceZone + ":" + tenantStr + ":" + namespace
-		sourceTrafficOut := sourceQueryTrafficOut + ":" + sourceZone + ":" + tenantStr + ":" + namespace
-		sourceRequests := sourceQueryRequests + ":" + sourceZone + ":" + tenantStr + ":" + namespace
+		sourceStorage := sourceQueryStorage + ":" + zone + ":" + tenantStr + ":" + namespace
+		sourceTrafficOut := sourceQueryTrafficOut + ":" + zone + ":" + tenantStr + ":" + namespace
+		sourceRequests := sourceQueryRequests + ":" + zone + ":" + tenantStr + ":" + namespace
 
 		tenant, err := tenantsmodel.Ensure(ctx, tx, &db.Tenant{Source: tenantStr})
 		checkErrExit(err)
 
-		category, err := categoriesmodel.Ensure(ctx, tx, &db.Category{Source: "cloudscale-s3:" + objectsUser.DisplayName})
+		category, err := categoriesmodel.Ensure(ctx, tx, &db.Category{Source: zone + ":" + objectsUser.DisplayName})
 		checkErrExit(err)
 
 		// Ensure a suitable dateTime object
