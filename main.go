@@ -61,7 +61,7 @@ var (
 			Source: sourceQueryRequests + ":" + sourceZones[0],
 			Target: sql.NullString{String: "1405", Valid: true},
 			Amount: 0.005,
-			Unit:   "1k Requests",
+			Unit:   "KReq",
 			During: db.InfiniteRange(),
 		},
 	}
@@ -84,12 +84,26 @@ var (
 		},
 	}
 
-	queryData = []*db.Query{
+	queriesData = []*db.Query{
 		{
-			Name:        "Dummy",
-			Description: "Dummy query for facts without queries",
+			Name:        sourceQueryStorage + ":" + sourceZones[0],
+			Description: "S3 Storage",
 			Query:       "",
-			Unit:        "",
+			Unit:        "GB/day",
+			During:      db.InfiniteRange(),
+		},
+		{
+			Name:        sourceQueryTrafficOut + ":" + sourceZones[0],
+			Description: "S3 Traffic Out",
+			Query:       "",
+			Unit:        "GB",
+			During:      db.InfiniteRange(),
+		},
+		{
+			Name:        sourceQueryRequests + ":" + sourceZones[0],
+			Description: "S3 Requests",
+			Query:       "",
+			Unit:        "KReq",
 			During:      db.InfiniteRange(),
 		},
 	}
@@ -126,7 +140,7 @@ func initDb(ctx context.Context, tx *sqlx.Tx) error {
 		}
 	}
 
-	for _, query := range queryData {
+	for _, query := range queriesData {
 		_, err := queriesmodel.Ensure(ctx, tx, query)
 		if err != nil {
 			return err
@@ -215,15 +229,13 @@ func main() {
 		dateTime, err = datetimesmodel.Ensure(ctx, tx, dateTime)
 		checkErrExit(err)
 
-		// Find the right query. Since we don't actually query prometheus we just fetch a dummy object.
-		query, err := queriesmodel.GetByName(ctx, tx, "Dummy")
-		checkErrExit(err)
-
 		if bucketMetricsData.TimeSeries[0].Usage.StorageBytes > 0 {
 			fmt.Printf("syncing %s\n", sourceStorage)
 			product, err := productsmodel.GetBestMatch(ctx, tx, sourceStorage, bucketMetricsData.TimeSeries[0].Start)
 			checkErrExit(err)
 			discount, err := discountsmodel.GetBestMatch(ctx, tx, sourceStorage, bucketMetricsData.TimeSeries[0].Start)
+			checkErrExit(err)
+			query, err := queriesmodel.GetByName(ctx, tx, sourceQueryStorage+":"+zone)
 			checkErrExit(err)
 			storageQuantity := float64(bucketMetricsData.TimeSeries[0].Usage.StorageBytes) / 1000 / 1000 / 1000
 			storageFact := factsmodel.New(dateTime, query, tenant, category, product, discount, storageQuantity)
@@ -237,6 +249,8 @@ func main() {
 			checkErrExit(err)
 			discount, err := discountsmodel.GetBestMatch(ctx, tx, sourceTrafficOut, bucketMetricsData.TimeSeries[0].Start)
 			checkErrExit(err)
+			query, err := queriesmodel.GetByName(ctx, tx, sourceQueryTrafficOut+":"+zone)
+			checkErrExit(err)
 			trafficOutQuantity := float64(bucketMetricsData.TimeSeries[0].Usage.SentBytes) / 1000 / 1000 / 1000
 			trafficOutFact := factsmodel.New(dateTime, query, tenant, category, product, discount, trafficOutQuantity)
 			_, err = factsmodel.Ensure(ctx, tx, trafficOutFact)
@@ -248,6 +262,8 @@ func main() {
 			product, err := productsmodel.GetBestMatch(ctx, tx, sourceRequests, bucketMetricsData.TimeSeries[0].Start)
 			checkErrExit(err)
 			discount, err := discountsmodel.GetBestMatch(ctx, tx, sourceRequests, bucketMetricsData.TimeSeries[0].Start)
+			checkErrExit(err)
+			query, err := queriesmodel.GetByName(ctx, tx, sourceQueryRequests+":"+zone)
 			checkErrExit(err)
 			requestsQuantity := float64(bucketMetricsData.TimeSeries[0].Usage.Requests) / 1000
 			requestsFact := factsmodel.New(dateTime, query, tenant, category, product, discount, requestsQuantity)
