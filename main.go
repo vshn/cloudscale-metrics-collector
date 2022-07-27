@@ -36,32 +36,32 @@ var (
 	sourceQueryTrafficOut = "s3-traffic-out"
 	sourceQueryRequests   = "s3-requests"
 
-	// We use "cloudscale" as the zone. We'll probably support other cloud providers at some point.
-	sourceZone = "cloudscale"
+	// we must use the correct zones, otherwise the appuio-odoo-adapter will not work correctly
+	sourceZones = []string{"c-appuio-cloudscale-lpg-2"}
 
 	// source "
 
 	// products
 	productsData = []*db.Product{
 		{
-			Source: sourceQueryStorage + ":" + sourceZone,
+			Source: sourceQueryStorage + ":" + sourceZones[0],
 			Target: sql.NullString{String: "1401", Valid: true},
 			Amount: 0.003,
 			Unit:   "GB/day", // SI GB according to cloudscale
 			During: db.InfiniteRange(),
 		},
 		{
-			Source: sourceQueryTrafficOut + ":" + sourceZone,
+			Source: sourceQueryTrafficOut + ":" + sourceZones[0],
 			Target: sql.NullString{String: "1403", Valid: true},
 			Amount: 0.02,
 			Unit:   "GB", // SI GB according to cloudscale
 			During: db.InfiniteRange(),
 		},
 		{
-			Source: sourceQueryRequests + ":" + sourceZone,
+			Source: sourceQueryRequests + ":" + sourceZones[0],
 			Target: sql.NullString{String: "1405", Valid: true},
 			Amount: 0.005,
-			Unit:   "1k Requests",
+			Unit:   "KReq",
 			During: db.InfiniteRange(),
 		},
 	}
@@ -84,12 +84,26 @@ var (
 		},
 	}
 
-	queryData = []*db.Query{
+	queriesData = []*db.Query{
 		{
-			Name:        "Dummy",
-			Description: "Dummy query for facts without queries",
+			Name:        sourceQueryStorage + ":" + sourceZones[0],
+			Description: "S3 Storage",
 			Query:       "",
-			Unit:        "",
+			Unit:        "GB/day",
+			During:      db.InfiniteRange(),
+		},
+		{
+			Name:        sourceQueryTrafficOut + ":" + sourceZones[0],
+			Description: "S3 Traffic Out",
+			Query:       "",
+			Unit:        "GB",
+			During:      db.InfiniteRange(),
+		},
+		{
+			Name:        sourceQueryRequests + ":" + sourceZones[0],
+			Description: "S3 Requests",
+			Query:       "",
+			Unit:        "KReq",
 			During:      db.InfiniteRange(),
 		},
 	}
@@ -126,7 +140,7 @@ func initDb(ctx context.Context, tx *sqlx.Tx) error {
 		}
 	}
 
-	for _, query := range queryData {
+	for _, query := range queriesData {
 		_, err := queriesmodel.Ensure(ctx, tx, query)
 		if err != nil {
 			return err
@@ -194,15 +208,20 @@ func main() {
 			fmt.Fprintf(os.Stderr, "WARNING: Cannot sync bucket %s, no namespace information found on objectsUser\n", bucketMetricsData.Subject.BucketName)
 			continue
 		}
+		zone := objectsUser.Tags["zone"]
+		if zone == "" {
+			fmt.Fprintf(os.Stderr, "WARNING: Cannot sync bucket %s, no zone information found on objectsUser\n", bucketMetricsData.Subject.BucketName)
+			continue
+		}
 
-		sourceStorage := sourceQueryStorage + ":" + sourceZone + ":" + tenantStr + ":" + namespace
-		sourceTrafficOut := sourceQueryTrafficOut + ":" + sourceZone + ":" + tenantStr + ":" + namespace
-		sourceRequests := sourceQueryRequests + ":" + sourceZone + ":" + tenantStr + ":" + namespace
+		sourceStorage := sourceQueryStorage + ":" + zone + ":" + tenantStr + ":" + namespace
+		sourceTrafficOut := sourceQueryTrafficOut + ":" + zone + ":" + tenantStr + ":" + namespace
+		sourceRequests := sourceQueryRequests + ":" + zone + ":" + tenantStr + ":" + namespace
 
 		tenant, err := tenantsmodel.Ensure(ctx, tx, &db.Tenant{Source: tenantStr})
 		checkErrExit(err)
 
-		category, err := categoriesmodel.Ensure(ctx, tx, &db.Category{Source: "cloudscale-s3:" + objectsUser.DisplayName})
+		category, err := categoriesmodel.Ensure(ctx, tx, &db.Category{Source: zone + ":" + objectsUser.DisplayName})
 		checkErrExit(err)
 
 		// Ensure a suitable dateTime object
@@ -210,15 +229,13 @@ func main() {
 		dateTime, err = datetimesmodel.Ensure(ctx, tx, dateTime)
 		checkErrExit(err)
 
-		// Find the right query. Since we don't actually query prometheus we just fetch a dummy object.
-		query, err := queriesmodel.GetByName(ctx, tx, "Dummy")
-		checkErrExit(err)
-
 		if bucketMetricsData.TimeSeries[0].Usage.StorageBytes > 0 {
 			fmt.Printf("syncing %s\n", sourceStorage)
 			product, err := productsmodel.GetBestMatch(ctx, tx, sourceStorage, bucketMetricsData.TimeSeries[0].Start)
 			checkErrExit(err)
 			discount, err := discountsmodel.GetBestMatch(ctx, tx, sourceStorage, bucketMetricsData.TimeSeries[0].Start)
+			checkErrExit(err)
+			query, err := queriesmodel.GetByName(ctx, tx, sourceQueryStorage+":"+zone)
 			checkErrExit(err)
 			storageQuantity := float64(bucketMetricsData.TimeSeries[0].Usage.StorageBytes) / 1000 / 1000 / 1000
 			storageFact := factsmodel.New(dateTime, query, tenant, category, product, discount, storageQuantity)
@@ -232,6 +249,8 @@ func main() {
 			checkErrExit(err)
 			discount, err := discountsmodel.GetBestMatch(ctx, tx, sourceTrafficOut, bucketMetricsData.TimeSeries[0].Start)
 			checkErrExit(err)
+			query, err := queriesmodel.GetByName(ctx, tx, sourceQueryTrafficOut+":"+zone)
+			checkErrExit(err)
 			trafficOutQuantity := float64(bucketMetricsData.TimeSeries[0].Usage.SentBytes) / 1000 / 1000 / 1000
 			trafficOutFact := factsmodel.New(dateTime, query, tenant, category, product, discount, trafficOutQuantity)
 			_, err = factsmodel.Ensure(ctx, tx, trafficOutFact)
@@ -243,6 +262,8 @@ func main() {
 			product, err := productsmodel.GetBestMatch(ctx, tx, sourceRequests, bucketMetricsData.TimeSeries[0].Start)
 			checkErrExit(err)
 			discount, err := discountsmodel.GetBestMatch(ctx, tx, sourceRequests, bucketMetricsData.TimeSeries[0].Start)
+			checkErrExit(err)
+			query, err := queriesmodel.GetByName(ctx, tx, sourceQueryRequests+":"+zone)
 			checkErrExit(err)
 			requestsQuantity := float64(bucketMetricsData.TimeSeries[0].Usage.Requests) / 1000
 			requestsFact := factsmodel.New(dateTime, query, tenant, category, product, discount, requestsQuantity)
