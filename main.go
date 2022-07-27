@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"github.com/appuio/appuio-cloud-reporting/pkg/db"
 	"github.com/cloudscale-ch/cloudscale-go-sdk/v2"
@@ -47,7 +48,7 @@ var (
 			Source: sourceQueryStorage + ":" + sourceZones[0],
 			Target: sql.NullString{String: "1401", Valid: true},
 			Amount: 0.003,
-			Unit:   "GB/day", // SI GB according to cloudscale
+			Unit:   "GBDay", // SI GB according to cloudscale
 			During: db.InfiniteRange(),
 		},
 		{
@@ -89,7 +90,7 @@ var (
 			Name:        sourceQueryStorage + ":" + sourceZones[0],
 			Description: "S3 Storage",
 			Query:       "",
-			Unit:        "GB/day",
+			Unit:        "GBDay",
 			During:      db.InfiniteRange(),
 		},
 		{
@@ -170,8 +171,6 @@ func main() {
 	// Fetch statistics of yesterday (as per Europe/Zurich). The metrics will cover the entire day.
 	now := time.Now().In(location)
 	date := time.Date(now.Year(), now.Month(), now.Day()-1, 0, 0, 0, 0, now.Location())
-	bucketMetricsRequest := cloudscale.BucketMetricsRequest{Start: date, End: date}
-	bucketMetrics, err := cloudscaleClient.Metrics.GetBucketMetrics(ctx, &bucketMetricsRequest)
 	checkErrExit(err)
 
 	rdb, err := db.Openx(dbUrl)
@@ -187,89 +186,50 @@ func main() {
 	err = tx.Commit()
 	checkErrExit(err)
 
-	for _, bucketMetricsData := range bucketMetrics.Data {
+	accumulated, err := accumulate(ctx, date, cloudscaleClient)
+	checkErrExit(err)
+
+	for source, value := range accumulated {
+		if value == 0 {
+			continue
+		}
+
+		fmt.Printf("syncing %s\n", source)
+
 		// start new transaction for actual work
 		tx, err = rdb.BeginTxx(ctx, &sql.TxOptions{})
 		checkErrExit(err)
 
-		objectsUser, err := cloudscaleClient.ObjectsUsers.Get(ctx, bucketMetricsData.Subject.ObjectsUserID)
-		if err != nil || objectsUser == nil {
-			fmt.Fprintf(os.Stderr, "WARNING: Cannot sync bucket %s, objects user %s not found\n", bucketMetricsData.Subject.BucketName, bucketMetricsData.Subject.ObjectsUserID)
-			continue
-		}
-
-		tenantStr := objectsUser.Tags["tenant"]
-		if tenantStr == "" {
-			fmt.Fprintf(os.Stderr, "WARNING: Cannot sync bucket %s, no tenant information found on objectsUser\n", bucketMetricsData.Subject.BucketName)
-			continue
-		}
-		namespace := objectsUser.Tags["namespace"]
-		if namespace == "" {
-			fmt.Fprintf(os.Stderr, "WARNING: Cannot sync bucket %s, no namespace information found on objectsUser\n", bucketMetricsData.Subject.BucketName)
-			continue
-		}
-		zone := objectsUser.Tags["zone"]
-		if zone == "" {
-			fmt.Fprintf(os.Stderr, "WARNING: Cannot sync bucket %s, no zone information found on objectsUser\n", bucketMetricsData.Subject.BucketName)
-			continue
-		}
-
-		sourceStorage := sourceQueryStorage + ":" + zone + ":" + tenantStr + ":" + namespace
-		sourceTrafficOut := sourceQueryTrafficOut + ":" + zone + ":" + tenantStr + ":" + namespace
-		sourceRequests := sourceQueryRequests + ":" + zone + ":" + tenantStr + ":" + namespace
-
-		tenant, err := tenantsmodel.Ensure(ctx, tx, &db.Tenant{Source: tenantStr})
+		tenant, err := tenantsmodel.Ensure(ctx, tx, &db.Tenant{Source: source.Tenant})
 		checkErrExit(err)
 
-		category, err := categoriesmodel.Ensure(ctx, tx, &db.Category{Source: zone + ":" + objectsUser.DisplayName})
+		category, err := categoriesmodel.Ensure(ctx, tx, &db.Category{Source: source.Zone + ":" + source.Namespace})
 		checkErrExit(err)
 
-		// Ensure a suitable dateTime object
-		dateTime := datetimesmodel.New(bucketMetricsData.TimeSeries[0].Start)
+		dateTime := datetimesmodel.New(source.Start)
 		dateTime, err = datetimesmodel.Ensure(ctx, tx, dateTime)
 		checkErrExit(err)
 
-		if bucketMetricsData.TimeSeries[0].Usage.StorageBytes > 0 {
-			fmt.Printf("syncing %s\n", sourceStorage)
-			product, err := productsmodel.GetBestMatch(ctx, tx, sourceStorage, bucketMetricsData.TimeSeries[0].Start)
-			checkErrExit(err)
-			discount, err := discountsmodel.GetBestMatch(ctx, tx, sourceStorage, bucketMetricsData.TimeSeries[0].Start)
-			checkErrExit(err)
-			query, err := queriesmodel.GetByName(ctx, tx, sourceQueryStorage+":"+zone)
-			checkErrExit(err)
-			storageQuantity := float64(bucketMetricsData.TimeSeries[0].Usage.StorageBytes) / 1000 / 1000 / 1000
-			storageFact := factsmodel.New(dateTime, query, tenant, category, product, discount, storageQuantity)
-			_, err = factsmodel.Ensure(ctx, tx, storageFact)
-			checkErrExit(err)
-		}
+		product, err := productsmodel.GetBestMatch(ctx, tx, source.String(), source.Start)
+		checkErrExit(err)
 
-		if bucketMetricsData.TimeSeries[0].Usage.SentBytes > 0 {
-			fmt.Printf("syncing %s\n", sourceTrafficOut)
-			product, err := productsmodel.GetBestMatch(ctx, tx, sourceTrafficOut, bucketMetricsData.TimeSeries[0].Start)
-			checkErrExit(err)
-			discount, err := discountsmodel.GetBestMatch(ctx, tx, sourceTrafficOut, bucketMetricsData.TimeSeries[0].Start)
-			checkErrExit(err)
-			query, err := queriesmodel.GetByName(ctx, tx, sourceQueryTrafficOut+":"+zone)
-			checkErrExit(err)
-			trafficOutQuantity := float64(bucketMetricsData.TimeSeries[0].Usage.SentBytes) / 1000 / 1000 / 1000
-			trafficOutFact := factsmodel.New(dateTime, query, tenant, category, product, discount, trafficOutQuantity)
-			_, err = factsmodel.Ensure(ctx, tx, trafficOutFact)
-			checkErrExit(err)
-		}
+		discount, err := discountsmodel.GetBestMatch(ctx, tx, source.String(), source.Start)
+		checkErrExit(err)
 
-		if bucketMetricsData.TimeSeries[0].Usage.Requests > 0 {
-			fmt.Printf("syncing %s\n", sourceTrafficOut)
-			product, err := productsmodel.GetBestMatch(ctx, tx, sourceRequests, bucketMetricsData.TimeSeries[0].Start)
-			checkErrExit(err)
-			discount, err := discountsmodel.GetBestMatch(ctx, tx, sourceRequests, bucketMetricsData.TimeSeries[0].Start)
-			checkErrExit(err)
-			query, err := queriesmodel.GetByName(ctx, tx, sourceQueryRequests+":"+zone)
-			checkErrExit(err)
-			requestsQuantity := float64(bucketMetricsData.TimeSeries[0].Usage.Requests) / 1000
-			requestsFact := factsmodel.New(dateTime, query, tenant, category, product, discount, requestsQuantity)
-			_, err = factsmodel.Ensure(ctx, tx, requestsFact)
-			checkErrExit(err)
+		query, err := queriesmodel.GetByName(ctx, tx, source.Query+":"+source.Zone)
+		checkErrExit(err)
+
+		var quantity float64
+		if query.Unit == "GB" || query.Unit == "GBDay" {
+			quantity = float64(value) / 1000 / 1000 / 1000
+		} else if query.Unit == "KReq" {
+			quantity = float64(value) / 1000
+		} else {
+			checkErrExit(errors.New("Unknown query unit " + query.Unit))
 		}
+		storageFact := factsmodel.New(dateTime, query, tenant, category, product, discount, quantity)
+		_, err = factsmodel.Ensure(ctx, tx, storageFact)
+		checkErrExit(err)
 
 		err = tx.Commit()
 		checkErrExit(err)
