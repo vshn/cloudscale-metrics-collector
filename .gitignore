@@ -12,5 +12,8 @@ cloudscale-metrics-collector
 .public/
 node_modules/
 
+# IDE
+.idea/
+
 # Configuration
 env
