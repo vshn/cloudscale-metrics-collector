@@ -33,9 +33,9 @@ var (
 
 	// source format: 'query:zone:tenant:namespace' or 'query:zone:tenant:namespace:class'
 	// We do not have real (prometheus) queries here, just random hardcoded strings.
-	sourceQueryStorage    = "s3-storage"
-	sourceQueryTrafficOut = "s3-traffic-out"
-	sourceQueryRequests   = "s3-requests"
+	sourceQueryStorage    = "object-storage-storage"
+	sourceQueryTrafficOut = "object-storage-traffic-out"
+	sourceQueryRequests   = "object-storage-requests"
 
 	// we must use the correct zones, otherwise the appuio-odoo-adapter will not work correctly
 	sourceZones = []string{"c-appuio-cloudscale-lpg-2"}
@@ -88,21 +88,21 @@ var (
 	queriesData = []*db.Query{
 		{
 			Name:        sourceQueryStorage + ":" + sourceZones[0],
-			Description: "S3 Storage",
+			Description: "Object Storage - Storage (cloudscale.ch)",
 			Query:       "",
 			Unit:        "GBDay",
 			During:      db.InfiniteRange(),
 		},
 		{
 			Name:        sourceQueryTrafficOut + ":" + sourceZones[0],
-			Description: "S3 Traffic Out",
+			Description: "Object Storage - Traffic Out (cloudscale.ch)",
 			Query:       "",
 			Unit:        "GB",
 			During:      db.InfiniteRange(),
 		},
 		{
 			Name:        sourceQueryRequests + ":" + sourceZones[0],
-			Description: "S3 Requests",
+			Description: "Object Storage - Requests (cloudscale.ch)",
 			Query:       "",
 			Unit:        "KReq",
 			During:      db.InfiniteRange(),
