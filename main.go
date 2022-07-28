@@ -212,7 +212,7 @@ func sync(ctx context.Context) error {
 		return err
 	}
 
-	accumulated, err := accumulate(ctx, date, cloudscaleClient)
+	accumulated, err := accumulateBucketMetrics(ctx, date, cloudscaleClient)
 	if err != nil {
 		return err
 	}
