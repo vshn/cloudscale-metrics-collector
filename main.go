@@ -17,6 +17,7 @@ import (
 	"github.com/vshn/cloudscale-metrics-collector/pkg/tenantsmodel"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -28,6 +29,7 @@ var (
 	appName = "cloudscale-metrics-collector"
 
 	// constants
+	daysEnvVariable  = "DAYS"
 	tokenEnvVariable = "CLOUDSCALE_API_TOKEN"
 	dbUrlEnvVariable = "ACR_DB_URL"
 
@@ -110,7 +112,7 @@ var (
 	}
 )
 
-func cfg() (string, string) {
+func cfg() (string, string, int) {
 	cloudscaleApiToken := os.Getenv(tokenEnvVariable)
 	if cloudscaleApiToken == "" {
 		fmt.Fprintf(os.Stderr, "ERROR: Environment variable %s must be set\n", tokenEnvVariable)
@@ -123,7 +125,17 @@ func cfg() (string, string) {
 		os.Exit(1)
 	}
 
-	return cloudscaleApiToken, dbUrl
+	daysStr := os.Getenv(daysEnvVariable)
+	if daysStr == "" {
+		daysStr = "1"
+	}
+	days, err := strconv.Atoi(daysStr)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "ERROR: Environment variable %s must contain an integer\n", daysEnvVariable)
+		os.Exit(1)
+	}
+
+	return cloudscaleApiToken, dbUrl, days
 }
 
 func initDb(ctx context.Context, tx *sqlx.Tx) error {
@@ -161,7 +173,7 @@ func main() {
 }
 
 func sync(ctx context.Context) error {
-	cloudscaleApiToken, dbUrl := cfg()
+	cloudscaleApiToken, dbUrl, days := cfg()
 
 	cloudscaleClient := cloudscale.NewClient(http.DefaultClient)
 	cloudscaleClient.AuthToken = cloudscaleApiToken
@@ -174,7 +186,7 @@ func sync(ctx context.Context) error {
 
 	// Fetch statistics of yesterday (as per Europe/Zurich). The metrics will cover the entire day.
 	now := time.Now().In(location)
-	date := time.Date(now.Year(), now.Month(), now.Day()-1, 0, 0, 0, 0, now.Location())
+	date := time.Date(now.Year(), now.Month(), now.Day()-days, 0, 0, 0, 0, now.Location())
 	if err != nil {
 		return err
 	}
