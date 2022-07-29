@@ -4,7 +4,7 @@ dist/
 
 # Build
 # TODO: Adjust binary file name
-cloudscale-metrics-collector
+/cloudscale-metrics-collector
 *.out
 
 # Docs
