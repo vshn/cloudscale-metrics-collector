@@ -11,48 +11,30 @@
 [releases]: https://github.com/vshn/cloudscale-metrics-collector/releases
 [codeclimate]: https://codeclimate.com/github/vshn/cloudscale-metrics-collector
 
-Template repository for common Go setups
+Batch job to sync usage data from the Cloudscale.ch metrics API to the [APPUiO Cloud reporting](https://github.com/appuio/appuio-cloud-reporting/) database.
 
-## Features
+## Syn Component installation
 
-* GitHub Workflows
-  - Build (Go & Docker image)
-  - Test (including CodeClimate)
-  - Lint (Go)
-  - Release (Goreleaser & Changelog generator)
+This component requires [component-appuio-cloud-reporting](https://github.com/appuio/component-appuio-cloud-reporting) and must be installed into the same
+namespace. This is required for this component to be able to access the billing database and its connection secrets.
 
-* GitHub issue templates
-  - PR template
-  - Issue templates using GitHub issue forms
+Provided that you have the [Project Syn] framework installed on a Kubernetes cluster, you can use the Commodore component included in this repository to
+install the sync job.
 
-* Goreleaser
-  - Go build for `amd64`, `armv8`
-  - Docker build for `latest` and `vx.y.z` tags
-  - Push Docker image to GitHub's registry `ghcr.io`
+```
+applications:
+  - cloudscale-metrics-collector
 
-* CLI and logging framework
-  - To help get you started with CLI subcommands, flags and environment variables
-  - If you don't need subcommands, remove `example_command.go` and adjust `cli.App` settings in `main.go`
+parameters:
+  cloudscale_metrics_collector:
+    namespace: 'appuio-cloud-reporting'
+    secrets:
+      stringData:
+        cloudscale:
+          token: 'TOKEN'
+```
 
+You need to get the token from the [Cloudscale Control Panel](https://control.cloudscale.ch). You need to select the correct Project (token is limited to one
+project), choose "API Tokens" in the menu and generate a new one.
 
-## Other repository settings
-
-1. GitHub Settings
-   - "Options > Wiki" (disable)
-   - "Options > Allow auto-merge" (enable)
-   - "Options > Automatically delete head branches" (enable)
-   - "Collaborators & Teams > Add Teams and users to grant maintainer permissions
-   - "Branches > Branch protection rules":
-     - Branch name pattern: `master`
-     - Require status check to pass before merging: `["lint"]` (you may need to push come commits first)
-   - "Pages > Source": Branch `gh-pages`
-
-1. GitHub Issue labels
-   - "Issues > Labels > New Label" for the following labels with color suggestions:
-     - `change` (`#D93F0B`)
-     - `dependency` (`#ededed`)
-     - `breaking` (`#FBCA04`)
-
-1. CodeClimate Settings
-   - "Repo Settings > GitHub > Pull request status updates" (install)
-   - "Repo Settings > Test coverage > Enforce {Diff,Total} Coverage" (configure to your liking)
+Since this is applied to the cluster globally, it has to go into the Commodore defaults repo (e.g. https://git.vshn.net/syn/commodore-defaults/). 

@@ -1,0 +1,4 @@
+parameters:
+  cloudscale_metrics_collector:
+    cloudscale:
+      token: 'replace-this-by-the-real-cloudscale-token'
