@@ -1,0 +1,12 @@
+parameters:
+  cloudscale_metrics_collector:
+    namespace: 'appuio-cloud-reporting'
+    secrets:
+      cloudscale:
+        stringData:
+          token: 'replace-this-by-the-real-cloudscale-token'
+    images:
+      collector:
+        registry: 'ghcr.io'
+        repository: 'vshn/cloudscale-metrics-collector'
+        tag: 'v0.2.0'

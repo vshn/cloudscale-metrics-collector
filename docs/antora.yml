@@ -1,0 +1,14 @@
+#
+# File managed by ModuleSync - Do Not Edit
+#
+# The title can be customized in `.sync.yml` with `:global.componentName`
+# The name is generated from the component's GitHub repository name, with the
+# `component-` prefix removed.
+#
+
+name: cloudscale-metrics-collector
+title: cloudscale-metrics-collector
+version: master
+start_page: ROOT:index.adoc
+nav:
+  - modules/ROOT/partials/nav.adoc
