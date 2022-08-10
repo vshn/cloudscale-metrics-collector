@@ -13,4 +13,4 @@
 
 Batch job to sync usage data from the Cloudscale.ch metrics API to the [APPUiO Cloud reporting](https://github.com/appuio/appuio-cloud-reporting/) database.
 
-See the [component documentation](https://hub.syn.tools/appuio-cloud-reporting/index.html) for more information.
+See the [component documentation](https://hub.syn.tools/cloudscale-metrics-collector/index.html) for more information.
