@@ -4,7 +4,7 @@ parameters:
     secrets:
       cloudscale:
         stringData:
-          token: 'replace-this-by-the-real-cloudscale-token'
+          token: "?{vaultkv:${cluster:tenant}/${cluster:name}/cloudscale-metrics-collector/token}"
     images:
       collector:
         registry: 'ghcr.io'

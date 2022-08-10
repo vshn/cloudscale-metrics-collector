@@ -23,15 +23,6 @@ local secrets = [
 ];
 
 {
-  namespace: {
-    kind: 'Namespace',
-    apiVersion: 'v1',
-    metadata: {
-      name: params.namespace,
-      labels+: labels,
-    },
-  },
-
   assert params.secrets != null : 'secrets must be set.',
   assert params.secrets.cloudscale != null : 'secrets.cloudscale must be set.',
   assert params.secrets.cloudscale.stringData != null : 'secrets.cloudscale.stringData must be set.',
@@ -88,7 +79,7 @@ local secrets = [
                       valueFrom: {
                         secretKeyRef: {
                           key: 'token',
-                          name: 'cloudscale-api',
+                          name: 'cloudscale',
                         },
                       },
                     },
