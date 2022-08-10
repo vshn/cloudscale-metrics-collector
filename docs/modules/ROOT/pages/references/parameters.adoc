@@ -1,0 +1,34 @@
+= Parameters
+
+The parent key for all of the following parameters is `cloudscale_metrics_collector`.
+
+See xref:how-tos/installation.adoc[Installation] for a full example.
+
+== `namespace`
+
+[horizontal]
+type:: string
+default:: `appuio-cloud-reporting`
+
+The namespace in which to deploy this component.
+
+
+== `images`
+
+[horizontal]
+type:: dictionary
+default:: https://github.com/appuio/cloudscale-metrics-collector/blob/master/component/class/defaults.yml[See `class/defaults.yml].
+
+Dictionary containing the container images used by this component.
+
+
+== `secrets.stringData.cloudscale.token`
+
+[horizontal]
+type:: string
+default:: Required.
+
+The cloudscale API token.
+
+You need to get the token from the https://control.cloudscale.ch[Cloudscale Control Panel]. You need to select the correct Project (token is limited to one
+project), choose "API Tokens" in the menu and generate a new one.

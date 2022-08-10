@@ -1,0 +1,5 @@
+= cloudscale-metrics-collector
+
+Batch job to sync usage data from the Cloudscale.ch metrics API to the https://github.com/appuio/appuio-cloud-reporting/[APPUiO Cloud Reporting] database.
+
+See the xref:references/parameters.adoc[parameters] reference for further details.

@@ -1,0 +1,26 @@
+= Installation
+
+== Requirements
+
+This component requires https://github.com/appuio/component-appuio-cloud-reporting[component-appuio-cloud-reporting] and must be installed into the same
+namespace. This is required for this component to be able to access the billing database and its connection secrets.
+
+== Example
+
+Since this is applied to the cluster globally, it has to go into the Commodore defaults repo (e.g. https://git.vshn.net/syn/commodore-defaults/).
+
+[source,yaml]
+----
+applications:
+  - cloudscale-metrics-collector
+
+parameters:
+  cloudscale_metrics_collector:
+    namespace: 'appuio-cloud-reporting'
+    secrets:
+      stringData:
+        cloudscale:
+          token: 'TOKEN'
+----
+
+See the xref:references/parameters.adoc[parameters] reference for a full list of parameters.

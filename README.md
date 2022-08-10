@@ -13,28 +13,4 @@
 
 Batch job to sync usage data from the Cloudscale.ch metrics API to the [APPUiO Cloud reporting](https://github.com/appuio/appuio-cloud-reporting/) database.
 
-## Syn Component installation
-
-This component requires [component-appuio-cloud-reporting](https://github.com/appuio/component-appuio-cloud-reporting) and must be installed into the same
-namespace. This is required for this component to be able to access the billing database and its connection secrets.
-
-Provided that you have the [Project Syn] framework installed on a Kubernetes cluster, you can use the Commodore component included in this repository to
-install the sync job.
-
-```
-applications:
-  - cloudscale-metrics-collector
-
-parameters:
-  cloudscale_metrics_collector:
-    namespace: 'appuio-cloud-reporting'
-    secrets:
-      stringData:
-        cloudscale:
-          token: 'TOKEN'
-```
-
-You need to get the token from the [Cloudscale Control Panel](https://control.cloudscale.ch). You need to select the correct Project (token is limited to one
-project), choose "API Tokens" in the menu and generate a new one.
-
-Since this is applied to the cluster globally, it has to go into the Commodore defaults repo (e.g. https://git.vshn.net/syn/commodore-defaults/). 
+See the [component documentation](https://hub.syn.tools/appuio-cloud-reporting/index.html) for more information.

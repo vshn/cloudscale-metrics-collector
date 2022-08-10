@@ -27,6 +27,10 @@ build-bin: fmt vet ## Build binary
 build-docker: build-bin ## Build docker image
 	$(DOCKER_CMD) build -t $(CONTAINER_IMG) .
 
+.PHONY: docs-serve
+docs-serve: ## Preview the documentation
+	$(ANTORA_PREVIEW_CMD)
+
 .PHONY: test
 test: test-go ## All-in-one test
 
