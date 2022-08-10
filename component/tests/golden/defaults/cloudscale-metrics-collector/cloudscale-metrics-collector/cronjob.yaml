@@ -37,7 +37,7 @@ spec:
                   valueFrom:
                     secretKeyRef:
                       key: token
-                      name: cloudscale-api
+                      name: cloudscale
               image: ghcr.io/vshn/cloudscale-metrics-collector:v0.2.0
               name: cloudscale-metrics-collector-backfill
               resources: {}

@@ -22,7 +22,7 @@ default:: https://github.com/appuio/cloudscale-metrics-collector/blob/master/com
 Dictionary containing the container images used by this component.
 
 
-== `secrets.stringData.cloudscale.token`
+== `secrets.cloudscale.stringData.token`
 
 [horizontal]
 type:: string
@@ -30,5 +30,5 @@ default:: Required.
 
 The cloudscale API token.
 
-You need to get the token from the https://control.cloudscale.ch[Cloudscale Control Panel]. You need to select the correct Project (token is limited to one
-project), choose "API Tokens" in the menu and generate a new one.
+You need to get the token from the https://control.cloudscale.ch[Cloudscale Control Panel].
+You need to select the correct Project (token is limited to one project), choose "API Tokens" in the menu and generate a new one.
