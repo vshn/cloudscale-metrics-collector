@@ -1,6 +1,5 @@
 parameters:
   cloudscale_metrics_collector:
-    namespace: 'appuio-cloud-reporting'
     secrets:
       cloudscale:
         stringData:
