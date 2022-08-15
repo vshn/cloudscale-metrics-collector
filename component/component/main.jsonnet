@@ -1,6 +1,7 @@
 local kap = import 'lib/kapitan.libjsonnet';
 local inv = kap.inventory();
 local params = inv.parameters.cloudscale_metrics_collector;
+local paramsACR = inv.parameters.appuio_cloud_reporting;
 local kube = import 'lib/kube.libjsonnet';
 local com = import 'lib/commodore.libjsonnet';
 local collectorImage = '%(registry)s/%(repository)s:%(tag)s' % params.images.collector;
@@ -16,7 +17,7 @@ local secrets = [
   if params.secrets[s] != null then
     kube.Secret(s) {
       metadata+: {
-        namespace: params.namespace,
+        namespace: paramsACR.namespace,
       }
     } + com.makeMergeable(params.secrets[s])
   for s in std.objectFields(params.secrets)
@@ -34,7 +35,7 @@ local secrets = [
     apiVersion: 'batch/v1',
     metadata: {
       name: 'cloudscale-metrics-collector',
-      namespace: params.namespace,
+      namespace: paramsACR.namespace,
       labels+: labels,
     },
     spec: {
@@ -72,7 +73,7 @@ local secrets = [
                     },
                     {
                       name: 'ACR_DB_URL',
-                      value: 'postgres://$(username):$(password)@reporting-db.appuio-reporting.svc:5432/reporting?sslmode=disable',
+                      value: 'postgres://$(username):$(password)@%(host)s:%(port)s/%(name)s?%(parameters)s' % paramsACR.database,
                     },
                     {
                       name: 'CLOUDSCALE_API_TOKEN',
