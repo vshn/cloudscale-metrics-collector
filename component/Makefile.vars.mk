@@ -1,11 +1,11 @@
 # Commodore takes the root dir name as the component name
-COMPONENT_NAME ?= $(shell basename $(shell dirname ${PWD}) | sed s/^component-//)
+COMPONENT_NAME ?= cloudscale-metrics-collector
 COMPONENT_SUBDIR ?= $(shell basename ${PWD})
 
 compiled_path   ?= compiled/$(COMPONENT_NAME)/$(COMPONENT_NAME)
 root_volume     ?= -v "$${PWD}/../:/$(COMPONENT_NAME)"
 compiled_volume ?= -v "$${PWD}/$(compiled_path):/$(COMPONENT_NAME)"
-commodore_args  ?= -r ../ --search-paths .
+commodore_args  ?= --search-paths . -n $(COMPONENT_NAME)
 
 ifneq "$(shell which docker 2>/dev/null)" ""
 	DOCKER_CMD    ?= $(shell which docker)
