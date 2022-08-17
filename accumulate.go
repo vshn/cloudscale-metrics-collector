@@ -69,10 +69,9 @@ func accumulateBucketMetricsForObjectsUser(accumulated map[AccumulateKey]uint64,
 	if namespace == "" {
 		return fmt.Errorf("no namespace information found on objectsUser")
 	}
-	zone := objectsUser.Tags["zone"]
-	if zone == "" {
-		return fmt.Errorf("no zone information found on objectsUser")
-	}
+	// For now all the buckets have the same zone. This may change in the future if Cloudscale decides to have different
+	// prices for different locations.
+	zone := sourceZones[0]
 
 	sourceStorage := AccumulateKey{
 		Query:     sourceQueryStorage,
