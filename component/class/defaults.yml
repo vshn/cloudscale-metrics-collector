@@ -8,4 +8,4 @@ parameters:
       collector:
         registry: 'ghcr.io'
         repository: 'vshn/cloudscale-metrics-collector'
-        tag: 'v0.2.0'
+        tag: 'v0.3.1'
