@@ -43,8 +43,6 @@ var (
 	// All the zones we use here must be known to the appuio-odoo-adapter as well.
 	sourceZones = []string{"cloudscale"}
 
-	// source "
-
 	// products
 	productsData = []*db.Product{
 		{
