@@ -39,8 +39,9 @@ var (
 	sourceQueryTrafficOut = "object-storage-traffic-out"
 	sourceQueryRequests   = "object-storage-requests"
 
-	// we must use the correct zones, otherwise the appuio-odoo-adapter will not work correctly
-	sourceZones = []string{"c-appuio-cloudscale-lpg-2"}
+	// SourceZone represents the zone of the bucket, not of the cluster where the request for the bucket originated.
+	// All the zones we use here must be known to the appuio-odoo-adapter as well.
+	sourceZones = []string{"cloudscale"}
 
 	// source "
 

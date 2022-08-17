@@ -21,7 +21,7 @@ func assertEqualfUint64(t *testing.T, expected uint64, actual uint64, msg string
 }
 
 func TestAccumulateBucketMetricsForObjectsUser(t *testing.T) {
-	zone := "appuio-cloudscale-ch-lpg"
+	zone := "cloudscale"
 	tenant := "inity"
 	namespace := "testnamespace"
 
