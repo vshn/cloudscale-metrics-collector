@@ -38,9 +38,9 @@ spec:
                     secretKeyRef:
                       key: token
                       name: cloudscale
-              image: ghcr.io/vshn/cloudscale-metrics-collector:v0.3.2
+              image: ghcr.io/vshn/cloudscale-metrics-collector:v0.3.3
               name: cloudscale-metrics-collector-backfill
               resources: {}
           restartPolicy: OnFailure
-  schedule: 10 4,10,16,22 * * *
+  schedule: 10 4,10,16 * * *
   successfulJobsHistoryLimit: 3

@@ -94,7 +94,7 @@ local secrets = [
           },
         },
       },
-      schedule: '10 4,10,16,22 * * *',
+      schedule: '10 4,10,16 * * *', # Times in UTC! Don't run job around midnight as cloudscale API may return incomplete data
       successfulJobsHistoryLimit: 3,
     },
   },
