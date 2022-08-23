@@ -38,7 +38,7 @@ spec:
                     secretKeyRef:
                       key: token
                       name: cloudscale
-              image: ghcr.io/vshn/cloudscale-metrics-collector:v0.3.1
+              image: ghcr.io/vshn/cloudscale-metrics-collector:v0.3.2
               name: cloudscale-metrics-collector-backfill
               resources: {}
           restartPolicy: OnFailure
