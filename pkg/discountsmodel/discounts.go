@@ -6,6 +6,7 @@ import (
 	"github.com/appuio/appuio-cloud-reporting/pkg/db"
 	"github.com/jmoiron/sqlx"
 	"github.com/vshn/cloudscale-metrics-collector/pkg/tokenmatcher"
+	"reflect"
 	"time"
 )
 
@@ -67,6 +68,15 @@ func Ensure(ctx context.Context, tx *sqlx.Tx, ensureDiscount *db.Discount) (*db.
 		if err != nil {
 			return nil, err
 		}
+	} else {
+		ensureDiscount.Id = discount.Id
+		if !reflect.DeepEqual(discount, ensureDiscount) {
+			fmt.Printf("updating discount\n")
+			err = Update(tx, ensureDiscount)
+			if err != nil {
+				return nil, err
+			}
+		}
 	}
 	return discount, nil
 }
@@ -79,4 +89,14 @@ func Create(p db.NamedPreparer, in *db.Discount) (*db.Discount, error) {
 		err = fmt.Errorf("cannot create discount %v: %w", in, err)
 	}
 	return &discount, err
+}
+
+func Update(p db.NamedPreparer, in *db.Discount) error {
+	var discount db.Discount
+	err := db.GetNamed(p, &discount,
+		"UPDATE discounts SET source=:source, discount=:target, during=:during WHERE id=:id RETURNING *", in)
+	if err != nil {
+		err = fmt.Errorf("cannot update discount %v: %w", in, err)
+	}
+	return err
 }

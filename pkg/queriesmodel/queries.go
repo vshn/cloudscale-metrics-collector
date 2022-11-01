@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/appuio/appuio-cloud-reporting/pkg/db"
 	"github.com/jmoiron/sqlx"
+	"reflect"
 )
 
 func GetByName(ctx context.Context, tx *sqlx.Tx, name string) (*db.Query, error) {
@@ -29,6 +30,15 @@ func Ensure(ctx context.Context, tx *sqlx.Tx, ensureQuery *db.Query) (*db.Query,
 		if err != nil {
 			return nil, err
 		}
+	} else {
+		ensureQuery.Id = query.Id
+		if !reflect.DeepEqual(query, ensureQuery) {
+			fmt.Printf("updating query\n")
+			err = Update(tx, ensureQuery)
+			if err != nil {
+				return nil, err
+			}
+		}
 	}
 	return query, nil
 }
@@ -41,4 +51,14 @@ func Create(p db.NamedPreparer, in *db.Query) (*db.Query, error) {
 		err = fmt.Errorf("cannot create query %v: %w", in, err)
 	}
 	return &query, err
+}
+
+func Update(p db.NamedPreparer, in *db.Query) error {
+	var query db.Query
+	err := db.GetNamed(p, &query,
+		"UPDATE queries SET name=:name, description=:description, query=:query, unit=:unit, during=:during, parent_id=:parent_id WHERE id=:id RETURNING *", in)
+	if err != nil {
+		err = fmt.Errorf("cannot update query %v: %w", in, err)
+	}
+	return err
 }
