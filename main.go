@@ -42,73 +42,6 @@ var (
 	// SourceZone represents the zone of the bucket, not of the cluster where the request for the bucket originated.
 	// All the zones we use here must be known to the appuio-odoo-adapter as well.
 	sourceZones = []string{"cloudscale"}
-
-	// products
-	productsData = []*db.Product{
-		{
-			Source: sourceQueryStorage + ":" + sourceZones[0],
-			Target: sql.NullString{String: "1401", Valid: true},
-			Amount: 0.003,
-			Unit:   "GBDay", // SI GB according to cloudscale
-			During: db.InfiniteRange(),
-		},
-		{
-			Source: sourceQueryTrafficOut + ":" + sourceZones[0],
-			Target: sql.NullString{String: "1403", Valid: true},
-			Amount: 0.02,
-			Unit:   "GB", // SI GB according to cloudscale
-			During: db.InfiniteRange(),
-		},
-		{
-			Source: sourceQueryRequests + ":" + sourceZones[0],
-			Target: sql.NullString{String: "1405", Valid: true},
-			Amount: 0.005,
-			Unit:   "KReq",
-			During: db.InfiniteRange(),
-		},
-	}
-
-	discountsData = []*db.Discount{
-		{
-			Source:   sourceQueryStorage,
-			Discount: 0,
-			During:   db.InfiniteRange(),
-		},
-		{
-			Source:   sourceQueryTrafficOut,
-			Discount: 0,
-			During:   db.InfiniteRange(),
-		},
-		{
-			Source:   sourceQueryRequests,
-			Discount: 0,
-			During:   db.InfiniteRange(),
-		},
-	}
-
-	queriesData = []*db.Query{
-		{
-			Name:        sourceQueryStorage + ":" + sourceZones[0],
-			Description: "Object Storage - Storage (cloudscale.ch)",
-			Query:       "",
-			Unit:        "GBDay",
-			During:      db.InfiniteRange(),
-		},
-		{
-			Name:        sourceQueryTrafficOut + ":" + sourceZones[0],
-			Description: "Object Storage - Traffic Out (cloudscale.ch)",
-			Query:       "",
-			Unit:        "GB",
-			During:      db.InfiniteRange(),
-		},
-		{
-			Name:        sourceQueryRequests + ":" + sourceZones[0],
-			Description: "Object Storage - Requests (cloudscale.ch)",
-			Query:       "",
-			Unit:        "KReq",
-			During:      db.InfiniteRange(),
-		},
-	}
 )
 
 func cfg() (string, string, int) {
@@ -138,21 +71,21 @@ func cfg() (string, string, int) {
 }
 
 func initDb(ctx context.Context, tx *sqlx.Tx) error {
-	for _, product := range productsData {
+	for _, product := range ensureProducts {
 		_, err := productsmodel.Ensure(ctx, tx, product)
 		if err != nil {
 			return err
 		}
 	}
 
-	for _, discount := range discountsData {
+	for _, discount := range ensureDiscounts {
 		_, err := discountsmodel.Ensure(ctx, tx, discount)
 		if err != nil {
 			return err
 		}
 	}
 
-	for _, query := range queriesData {
+	for _, query := range ensureQueries {
 		_, err := queriesmodel.Ensure(ctx, tx, query)
 		if err != nil {
 			return err
