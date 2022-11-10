@@ -5,9 +5,11 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/appuio/appuio-cloud-reporting/pkg/db"
-	"github.com/cloudscale-ch/cloudscale-go-sdk/v2"
-	"github.com/jmoiron/sqlx"
+	"net/http"
+	"os"
+	"strconv"
+	"time"
+
 	"github.com/vshn/cloudscale-metrics-collector/pkg/categoriesmodel"
 	"github.com/vshn/cloudscale-metrics-collector/pkg/datetimesmodel"
 	"github.com/vshn/cloudscale-metrics-collector/pkg/discountsmodel"
@@ -15,10 +17,10 @@ import (
 	"github.com/vshn/cloudscale-metrics-collector/pkg/productsmodel"
 	"github.com/vshn/cloudscale-metrics-collector/pkg/queriesmodel"
 	"github.com/vshn/cloudscale-metrics-collector/pkg/tenantsmodel"
-	"net/http"
-	"os"
-	"strconv"
-	"time"
+
+	"github.com/appuio/appuio-cloud-reporting/pkg/db"
+	"github.com/cloudscale-ch/cloudscale-go-sdk/v2"
+	"github.com/jmoiron/sqlx"
 )
 
 var (
@@ -96,6 +98,9 @@ func initDb(ctx context.Context, tx *sqlx.Tx) error {
 
 func main() {
 	ctx := context.Background()
+
+	fmt.Fprintf(os.Stderr, "%s: version %s (%s) compiled on %s\n", appName, version, commit, date)
+
 	err := sync(ctx)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "ERROR: %v\n", err)
@@ -134,7 +139,12 @@ func sync(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func(tx *sqlx.Tx) {
+		err := tx.Rollback()
+		if err != nil && !errors.Is(err, sql.ErrTxDone) {
+			fmt.Fprintf(os.Stderr, "rollback failed: %v", err)
+		}
+	}(tx)
 	err = initDb(ctx, tx)
 	if err != nil {
 		return err
