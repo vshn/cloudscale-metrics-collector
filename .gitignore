@@ -19,3 +19,6 @@ node_modules/
 
 # Configuration
 env
+
+# Work
+.work/

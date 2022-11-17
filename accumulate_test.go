@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
+	"testing"
+	"time"
+
 	"github.com/cloudscale-ch/cloudscale-go-sdk/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 // assertEqualfUint64 implements the functionality of assert.Equalf for uint64, because assert.Equalf cannot print uint64 correctly.
@@ -50,7 +51,7 @@ func TestAccumulateBucketMetricsForObjectsUser(t *testing.T) {
 	objectsUser.Tags = cloudscale.TagMap{"zone": zone, "tenant": tenant, "namespace": namespace}
 
 	accumulated := make(map[AccumulateKey]uint64)
-	accumulateBucketMetricsForObjectsUser(accumulated, bucketMetricsData, &objectsUser)
+	assert.NoError(t, accumulateBucketMetricsForObjectsUser(accumulated, bucketMetricsData, &objectsUser))
 
 	require.Len(t, accumulated, 3, "incorrect amount of values 'accumulated'")
 
