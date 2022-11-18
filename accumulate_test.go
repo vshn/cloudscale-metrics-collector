@@ -23,7 +23,7 @@ func assertEqualfUint64(t *testing.T, expected uint64, actual uint64, msg string
 
 func TestAccumulateBucketMetricsForObjectsUser(t *testing.T) {
 	zone := "cloudscale"
-	tenant := "inity"
+	organization := "inity"
 	namespace := "testnamespace"
 
 	// get the correct date for a data set that was created yesterday
@@ -47,17 +47,15 @@ func TestAccumulateBucketMetricsForObjectsUser(t *testing.T) {
 	bucketMetricsData := cloudscale.BucketMetricsData{
 		TimeSeries: bucketMetricsInterval,
 	}
-	objectsUser := cloudscale.ObjectsUser{}
-	objectsUser.Tags = cloudscale.TagMap{"zone": zone, "tenant": tenant, "namespace": namespace}
 
 	accumulated := make(map[AccumulateKey]uint64)
-	assert.NoError(t, accumulateBucketMetricsForObjectsUser(accumulated, bucketMetricsData, &objectsUser))
+	assert.NoError(t, accumulateBucketMetricsForObjectsUser(accumulated, bucketMetricsData, organization, namespace))
 
 	require.Len(t, accumulated, 3, "incorrect amount of values 'accumulated'")
 
 	key := AccumulateKey{
 		Zone:      zone,
-		Tenant:    tenant,
+		Tenant:    organization,
 		Namespace: namespace,
 		Start:     date,
 	}

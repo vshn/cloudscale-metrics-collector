@@ -11,3 +11,25 @@
 Batch job to sync usage data from the Cloudscale.ch metrics API to the [APPUiO Cloud reporting](https://github.com/appuio/appuio-cloud-reporting/) database.
 
 See the [component documentation](https://hub.syn.tools/cloudscale-metrics-collector/index.html) for more information.
+
+## Getting started
+
+You'll need a working setup of [provider-cloudscale](https://github.com/vshn/provider-cloudscale/) and 
+[appuio-cloud-reporting](https://github.com/appuio/appuio-cloud-reporting) to be able to test this collector. Make sure to follow their READMEs accordingly.
+
+Then, set the following env variables:
+```
+# how many days since now metrics should be fetched from
+DAYS=2
+
+ACR_DB_URL=postgres://reporting:reporting@localhost/appuio-cloud-reporting-test
+CLOUDSCALE_API_TOKEN=<API TOKEN>
+
+# either set server url and token
+KUBERNETES_SERVER_URL=<TOKEN>
+KUBERNETES_SERVER_TOKEN=<TOKEN>
+
+# or set a KUBECONFIG - this also circumvents potential x509 certificate errors when connecting to a local cluster
+KUBECONFIG=/path/to/provider-cloudscale/.kind/kind-kubeconfig-v1.24.0
+```
+

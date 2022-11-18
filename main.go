@@ -14,6 +14,7 @@ import (
 	"github.com/vshn/cloudscale-metrics-collector/pkg/datetimesmodel"
 	"github.com/vshn/cloudscale-metrics-collector/pkg/discountsmodel"
 	"github.com/vshn/cloudscale-metrics-collector/pkg/factsmodel"
+	"github.com/vshn/cloudscale-metrics-collector/pkg/kubernetes"
 	"github.com/vshn/cloudscale-metrics-collector/pkg/productsmodel"
 	"github.com/vshn/cloudscale-metrics-collector/pkg/queriesmodel"
 	"github.com/vshn/cloudscale-metrics-collector/pkg/tenantsmodel"
@@ -31,9 +32,11 @@ var (
 	appName = "cloudscale-metrics-collector"
 
 	// constants
-	daysEnvVariable  = "DAYS"
-	tokenEnvVariable = "CLOUDSCALE_API_TOKEN"
-	dbUrlEnvVariable = "ACR_DB_URL"
+	daysEnvVariable            = "DAYS"
+	tokenEnvVariable           = "CLOUDSCALE_API_TOKEN"
+	dbUrlEnvVariable           = "ACR_DB_URL"
+	kubernetesURLEnvVariable   = "KUBERNETES_SERVER_URL"
+	kubernetesTokenEnvVariable = "KUBERNETES_SERVER_TOKEN"
 
 	// source format: 'query:zone:tenant:namespace' or 'query:zone:tenant:namespace:class'
 	// We do not have real (prometheus) queries here, just random hardcoded strings.
@@ -46,17 +49,26 @@ var (
 	sourceZones = []string{"cloudscale"}
 )
 
-func cfg() (string, string, int) {
+type config struct {
+	apiToken    string
+	databaseURL string
+
+	days int
+
+	kubeconfig            string
+	kubernetesServerURL   string
+	kubernetesServerToken string
+}
+
+func loadConfig() (*config, error) {
 	cloudscaleApiToken := os.Getenv(tokenEnvVariable)
 	if cloudscaleApiToken == "" {
-		fmt.Fprintf(os.Stderr, "ERROR: Environment variable %s must be set\n", tokenEnvVariable)
-		os.Exit(1)
+		return nil, fmt.Errorf("missing env var %q", tokenEnvVariable)
 	}
 
 	dbUrl := os.Getenv(dbUrlEnvVariable)
 	if dbUrl == "" {
-		fmt.Fprintf(os.Stderr, "ERROR: Environment variable %s must be set\n", dbUrlEnvVariable)
-		os.Exit(1)
+		return nil, fmt.Errorf("missing env var %q", dbUrlEnvVariable)
 	}
 
 	daysStr := os.Getenv(daysEnvVariable)
@@ -65,11 +77,29 @@ func cfg() (string, string, int) {
 	}
 	days, err := strconv.Atoi(daysStr)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "ERROR: Environment variable %s must contain an integer\n", daysEnvVariable)
-		os.Exit(1)
+		return nil, fmt.Errorf("env var %q not an integer: %w", daysEnvVariable, err)
 	}
 
-	return cloudscaleApiToken, dbUrl, days
+	kubeconfig := os.Getenv("KUBECONFIG")
+
+	url := os.Getenv(kubernetesURLEnvVariable)
+	if url == "" && kubeconfig == "" {
+		return nil, fmt.Errorf("missing env var %q", kubernetesURLEnvVariable)
+	}
+	token := os.Getenv(kubernetesTokenEnvVariable)
+	if token == "" && kubeconfig == "" {
+		return nil, fmt.Errorf("missing env var %q", kubernetesTokenEnvVariable)
+	}
+
+	return &config{
+		apiToken:    cloudscaleApiToken,
+		databaseURL: dbUrl,
+		days:        days,
+		// will load KUBECONFIG if defined, otherwise will use server url and token to connect.
+		kubeconfig:            kubeconfig,
+		kubernetesServerURL:   url,
+		kubernetesServerToken: token,
+	}, nil
 }
 
 func initDb(ctx context.Context, tx *sqlx.Tx) error {
@@ -110,10 +140,18 @@ func main() {
 }
 
 func sync(ctx context.Context) error {
-	cloudscaleApiToken, dbUrl, days := cfg()
+	cfg, err := loadConfig()
+	if err != nil {
+		return fmt.Errorf("config load: %w", err)
+	}
 
 	cloudscaleClient := cloudscale.NewClient(http.DefaultClient)
-	cloudscaleClient.AuthToken = cloudscaleApiToken
+	cloudscaleClient.AuthToken = cfg.apiToken
+
+	k8sclient, err := kubernetes.NewClient(cfg.kubeconfig, cfg.kubernetesServerURL, cfg.kubernetesServerToken)
+	if err != nil {
+		return fmt.Errorf("kubernetes client: %w", err)
+	}
 
 	// The cloudscale API works in Europe/Zurich, so we have to use the same, regardless of where this code runs
 	location, err := time.LoadLocation("Europe/Zurich")
@@ -123,12 +161,12 @@ func sync(ctx context.Context) error {
 
 	// Fetch statistics of yesterday (as per Europe/Zurich). The metrics will cover the entire day.
 	now := time.Now().In(location)
-	date := time.Date(now.Year(), now.Month(), now.Day()-days, 0, 0, 0, 0, now.Location())
+	date := time.Date(now.Year(), now.Month(), now.Day()-cfg.days, 0, 0, 0, 0, now.Location())
 	if err != nil {
 		return err
 	}
 
-	rdb, err := db.Openx(dbUrl)
+	rdb, err := db.Openx(cfg.databaseURL)
 	if err != nil {
 		return err
 	}
@@ -154,7 +192,7 @@ func sync(ctx context.Context) error {
 		return err
 	}
 
-	accumulated, err := accumulateBucketMetrics(ctx, date, cloudscaleClient)
+	accumulated, err := accumulateBucketMetrics(ctx, date, cloudscaleClient, k8sclient)
 	if err != nil {
 		return err
 	}
