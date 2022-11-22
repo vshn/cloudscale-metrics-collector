@@ -2,9 +2,10 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   labels:
+    app.kubernetes.io/component: cloudscale-metrics-collector
     app.kubernetes.io/managed-by: commodore
-    app.kubernetes.io/name: appuio-cloud-reporting
-    app.kubernetes.io/part-of: syn
+    app.kubernetes.io/name: cloudscale-metrics-collector
+    app.kubernetes.io/part-of: appuio-cloud-reporting
   name: cloudscale-metrics-collector
   namespace: appuio-cloud-reporting
 spec:
@@ -33,11 +34,9 @@ spec:
                       name: reporting-db
                 - name: ACR_DB_URL
                   value: postgres://$(username):$(password)@reporting-db.appuio-reporting.svc:5432/reporting?sslmode=disable
-                - name: CLOUDSCALE_API_TOKEN
-                  valueFrom:
-                    secretKeyRef:
-                      key: token
-                      name: cloudscale
+              envFrom:
+                - secretRef:
+                    name: credentials-cloudscale-metrics-collector
               image: ghcr.io/vshn/cloudscale-metrics-collector:v0.4.1
               name: cloudscale-metrics-collector-backfill
               resources: {}

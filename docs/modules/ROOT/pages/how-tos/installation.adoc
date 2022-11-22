@@ -16,9 +16,11 @@ parameters:
   cloudscale_metrics_collector:
     namespace: 'appuio-cloud-reporting'
     secrets:
-      cloudscale:
+      credentials:
         stringData:
-          token:"?{vaultkv:${cluster:tenant}/${cluster:name}/cloudscale-metrics-collector/token}"
+          CLOUDSCALE_API_TOKEN: "?{vaultkv:${cluster:tenant}/${cluster:name}/cloudscale-metrics-collector/${_instance}/token}"
+          KUBERNETES_SERVER_URL: "?{vaultkv:${cluster:tenant}/${cluster:name}/cloudscale-metrics-collector/${_instance}/cluster-server}"
+          KUBERNETES_SERVER_TOKEN: "?{vaultkv:${cluster:tenant}/${cluster:name}/cloudscale-metrics-collector/${_instance}/cluster-token}"
 ----
 
 See the xref:references/parameters.adoc[parameters] reference for a full list of parameters.
