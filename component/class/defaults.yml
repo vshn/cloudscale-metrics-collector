@@ -12,6 +12,6 @@ parameters:
       collector:
         registry: 'ghcr.io'
         repository: 'vshn/cloudscale-metrics-collector'
-        tag: 'v0.4.1'
+        tag: 'v0.5.1'
     # Times in UTC! Don't run job around midnight as exoscale API may return incomplete data
     schedule: '10 4,10,16 * * *'
