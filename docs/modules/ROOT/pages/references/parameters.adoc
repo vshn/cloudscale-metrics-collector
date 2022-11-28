@@ -19,8 +19,7 @@ default:: https://github.com/vshn/cloudscale-metrics-collector/blob/master/compo
 
 Dictionary containing the container images used by this component.
 
-
-== `secrets.cloudscale.stringData.token`
+== `secrets.credentials.stringData.CLOUDSCALE_API_TOKEN`
 
 [horizontal]
 type:: string
@@ -30,3 +29,21 @@ The cloudscale API token.
 
 You need to get the token from the https://control.cloudscale.ch[Cloudscale Control Panel].
 You need to select the correct Project (token is limited to one project), choose "API Tokens" in the menu and generate a new one.
+
+== `secrets.credentials.stringData.KUBERNETES_SERVER_URL`
+
+[horizontal]
+type:: string
+default:: Required.
+
+The Kubernetes server URL.
+
+== `secrets.credentials.stringData.KUBERNETES_SERVER_TOKEN`
+
+[horizontal]
+type:: string
+default:: Required.
+
+The token to connect to a Kubernetes cluster.
+
+The Service Account connected to this token should have `get` and `list` permissions to `buckets.cloudscale.crossplane.io` managed resource, and `get` and `list` permissions for namespaces.

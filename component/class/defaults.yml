@@ -1,11 +1,17 @@
 parameters:
   cloudscale_metrics_collector:
+    =_metadata:
+      multi_instance: true
     secrets:
-      cloudscale:
+      credentials:
         stringData:
-          token: "?{vaultkv:${cluster:tenant}/${cluster:name}/cloudscale-metrics-collector/token}"
+          CLOUDSCALE_API_TOKEN: "?{vaultkv:${cluster:tenant}/${cluster:name}/cloudscale-metrics-collector/${_instance}/token}"
+          KUBERNETES_SERVER_URL: "?{vaultkv:${cluster:tenant}/${cluster:name}/cloudscale-metrics-collector/${_instance}/cluster-server}"
+          KUBERNETES_SERVER_TOKEN: "?{vaultkv:${cluster:tenant}/${cluster:name}/cloudscale-metrics-collector/${_instance}/cluster-token}"
     images:
       collector:
         registry: 'ghcr.io'
         repository: 'vshn/cloudscale-metrics-collector'
         tag: 'v0.4.1'
+    # Times in UTC! Don't run job around midnight as exoscale API may return incomplete data
+    schedule: '10 4,10,16 * * *'
