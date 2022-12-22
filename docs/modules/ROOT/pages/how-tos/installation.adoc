@@ -5,6 +5,20 @@
 This component requires https://github.com/appuio/component-appuio-cloud-reporting[component-appuio-cloud-reporting] and is installed into the same namespace.
 This is required for this component to be able to access the billing database and its connection secrets.
 
+== Sources
+
+The data is matched from a k8s cluster and a Cloudscale project.
+The Kubernetes Service Account token is required to have `get` permissions on `Namespaces` and to the following managed resources:
+
+* `buckets.cloudscale.crossplane.io`
+
+=== Cloudscale project
+The User Access from a Cloudscale project is required to have read access to object storage (SOS buckets).
+
+=== K8s cluster
+The access to the desired cluster from where the metrics should be collected has to be configured. The current configuration for each instance is done in the
+`syn-tenant-repo` under `manifests/<desired-cluster>/billing`
+
 == Example
 
 [source,yaml]
