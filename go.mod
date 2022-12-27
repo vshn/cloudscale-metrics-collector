@@ -1,6 +1,6 @@
 module github.com/vshn/cloudscale-metrics-collector
 
-go 1.18
+go 1.19
 
 require (
 	github.com/appuio/appuio-cloud-reporting v0.5.0
