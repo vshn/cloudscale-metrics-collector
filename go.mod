@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/appuio/appuio-cloud-reporting v0.5.0
-	github.com/cloudscale-ch/cloudscale-go-sdk/v2 v2.0.1
+	github.com/cloudscale-ch/cloudscale-go-sdk/v2 v2.1.0
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/stretchr/testify v1.8.0
 	github.com/vshn/provider-cloudscale v0.5.0
