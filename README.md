@@ -2,7 +2,7 @@
 
 ## Archival notice
 
-This repository is archived and superseded by [vshn/syntax-cloudservices-collector](https://github.com/vshn/syntax-cloudservices-collector).
+This repository is archived and superseded by [vshn/billing-collector-cloudservices](https://github.com/vshn/billing-collector-cloudservices).
 
 ## Old readme
 
