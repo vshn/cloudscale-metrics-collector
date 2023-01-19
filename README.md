@@ -1,5 +1,11 @@
 # cloudscale-metrics-collector
 
+## Archival notice
+
+This repository is archived and superseded by [vshn/syntax-cloudservices-collector](https://github.com/vshn/syntax-cloudservices-collector).
+
+## Old readme
+
 [![Build](https://img.shields.io/github/workflow/status/vshn/cloudscale-metrics-collector/Test)][build]
 ![Go version](https://img.shields.io/github/go-mod/go-version/vshn/cloudscale-metrics-collector)
 [![Version](https://img.shields.io/github/v/release/vshn/cloudscale-metrics-collector)][releases]
